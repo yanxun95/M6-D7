@@ -2,7 +2,7 @@ import mongoose from "mongoose"
 
 const { Schema, model } = mongoose
 
-const userSchema = new Schema(
+const blogSchema = new Schema(
     {
         category: { type: String, required: true },
         title: { type: String, required: true },
@@ -16,10 +16,11 @@ const userSchema = new Schema(
             avatar: { type: String }
         },
         content: { type: String, required: true },
+        comments: [{ type: Schema.ObjectId, ref: "Comment" }],
     },
     {
         timestamps: true, // adds createdAt and updatedAt automatically
     }
 )
 
-export default model("User", userSchema)
+export default model("Blog", blogSchema) // bounded to the "blog" collection, if the collection is not there it is automatically created
