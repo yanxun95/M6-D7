@@ -2,8 +2,9 @@ import express from "express"
 import createHttpError from "http-errors"
 import BlogModel from "./schema.js"
 import CommentModel from "../comments/schema.js"
+import AuthorModel from "../authors/schema.js"
 import mongoose from "mongoose"
-import commentSchema from "../comments/schema.js"
+
 
 const blogRouter = express.Router()
 
@@ -165,7 +166,7 @@ blogRouter.delete("/:blogId/comments/:commentId", async (req, res, next) => {
             { new: true })
 
         if (deletedComment) {
-            res.status(204).send(`${commentId} has been delete!`)
+            res.status(204).send(commentId)
         } else {
             next(createHttpError(404, `Comment with id ${commentId} not found!`))
         }
@@ -174,7 +175,93 @@ blogRouter.delete("/:blogId/comments/:commentId", async (req, res, next) => {
     }
 })
 
+blogRouter.post("/:blogId/author", async (req, res, next) => {
+    try {
+        const newAuthor = new AuthorModel(req.body)
+        console.log(newAuthor)
+        const { _id } = await newAuthor.save()
 
+        const updatedblog = await BlogModel.findByIdAndUpdate(
+            req.params.blogId, // WHO we want to modify
+            { $push: { authors: mongoose.Types.ObjectId(_id) } },
+            { new: true })
+
+        if (updatedblog) {
+            res.send(updatedblog)
+        } else {
+            next(createHttpError(404, `blog with id ${req.params.blogId} not found!`))
+        }
+    } catch (error) {
+        next(error)
+    }
+})
+
+blogRouter.get("/:blogId/authors", async (req, res, next) => {
+    try {
+        const blogId = req.params.blogId
+
+        const blog = await BlogModel.findById(blogId, { "authors": 1, "_id": 0 }).populate('authors')
+        if (blog) {
+            res.send(blog)
+        } else {
+            next(createHttpError(404, `blog with id ${blogId} not found!`))
+        }
+    } catch (error) {
+        next(error)
+    }
+})
+
+blogRouter.get("/:blogId/authors/:authorId", async (req, res, next) => {
+    try {
+        const authorId = req.params.authorId
+
+        const author = await AuthorModel.findById(authorId) // similar to findOne, but findOne expects to receive a query as parameter
+        if (author) {
+            res.send(author)
+        } else {
+            next(createHttpError(404, `Author with id ${authorId} not found!`))
+        }
+    } catch (error) {
+        next(error)
+    }
+})
+
+blogRouter.put("/:blogId/authors/:authorId", async (req, res, next) => {
+    try {
+        const updatedAuthor = await AuthorModel.findByIdAndUpdate(
+            req.params.authorId, // WHO we want to modify
+            req.body, // HOW we want to modify him/her
+            { new: true })
+
+        if (updatedAuthor) {
+            res.send(updatedAuthor)
+        } else {
+            next(createHttpError(404, `Author with id ${req.params.authorId} not found!`))
+        }
+    } catch (error) {
+        next(error)
+    }
+})
+
+blogRouter.delete("/:blogId/authors/:authorId", async (req, res, next) => {
+    try {
+        const authorId = req.params.authorId
+
+        const deletedAuthor = await AuthorModel.findByIdAndDelete(authorId)
+        await BlogModel.findByIdAndUpdate(
+            req.params.blogId, // WHO we want to modify
+            { $pull: { authors: mongoose.Types.ObjectId(authorId) } }, // HOW we want to modify him/her
+            { new: true })
+
+        if (deletedAuthor) {
+            res.status(204).send(authorId)
+        } else {
+            next(createHttpError(404, `Author with id ${authorId} not found!`))
+        }
+    } catch (error) {
+        next(error)
+    }
+})
 
 
 export default blogRouter
