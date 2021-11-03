@@ -1,13 +1,15 @@
 import express from "express";
-import authorSchema from "./schema.js";
+import AuthorModel from "./schema.js";
 import BlogModel from "../blogs/schema.js";
 import { basicAuthMiddleware } from "../auth/basic.js";
+import { JWTAuthenticate } from "../auth/tools.js";
+import createHttpError from "http-errors";
 
 const authorRouter = express.Router();
 
 authorRouter.post("/register", async (req, res, next) => {
   try {
-    const newAuthor = new authorSchema(req.body);
+    const newAuthor = new AuthorModel(req.body);
     const { _id } = await newAuthor.save();
     res.status(201).send({ _id });
   } catch (error) {
@@ -15,16 +17,37 @@ authorRouter.post("/register", async (req, res, next) => {
   }
 });
 
-// authorRouter.get("/me/stories", basicAuthMiddleware, async (req, res, next) => {
-//   try {
-//     console.log("this is the id", req.user._id);
-//     // const blogs = await BlogModel.find().populate("comments");
-//     const blogs = await BlogModel.authors.findById(req.user._id);
+authorRouter.get("/me/stories", basicAuthMiddleware, async (req, res, next) => {
+  try {
+    console.log("id:", req.user._id);
+    const posts = await BlogModel.find({ authors: req.user._id.toString() });
 
-//     res.send(blogs);
-//   } catch (error) {
-//     next(error);
-//   }
-// });
+    res.status(200).send(posts);
+  } catch (error) {
+    next(error);
+  }
+});
 
+authorRouter.post("/login", async (req, res, next) => {
+  try {
+    // 1. Get email and password from req.body
+    const { email, password } = req.body;
+
+    // 2. Verify credentials
+    const user = await AuthorModel.checkCredentials(email, password);
+
+    if (user) {
+      // 3. If credentials are ok we are going to generate access token and refresh token
+      const { accessToken } = await JWTAuthenticate(user);
+      console.log("this", accessToken);
+
+      // 4. Send token back as a response
+      res.send({ accessToken });
+    } else {
+      next(createHttpError(401, "Credentials are not ok!"));
+    }
+  } catch (error) {
+    next(error);
+  }
+});
 export default authorRouter;
