@@ -3,6 +3,7 @@ import AuthorModel from "./schema.js";
 import BlogModel from "../blogs/schema.js";
 import { basicAuthMiddleware } from "../auth/basic.js";
 import { JWTAuthenticate } from "../auth/tools.js";
+import { JWTAuthMiddleware } from "../auth/token.js";
 import createHttpError from "http-errors";
 
 const authorRouter = express.Router();
@@ -38,14 +39,22 @@ authorRouter.post("/login", async (req, res, next) => {
 
     if (user) {
       // 3. If credentials are ok we are going to generate access token and refresh token
-      const { accessToken } = await JWTAuthenticate(user);
-      console.log("this", accessToken);
+      const accessToken = await JWTAuthenticate(user);
 
       // 4. Send token back as a response
       res.send({ accessToken });
     } else {
       next(createHttpError(401, "Credentials are not ok!"));
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+authorRouter.get("/me", JWTAuthMiddleware, async (req, res, next) => {
+  try {
+    console.log(req.user);
+    res.send(req.user);
   } catch (error) {
     next(error);
   }

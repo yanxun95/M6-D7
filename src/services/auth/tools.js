@@ -2,7 +2,6 @@ import jwt from "jsonwebtoken";
 
 export const JWTAuthenticate = async (user) => {
   // given the user the function gives us back the access token
-  console.log(user.id);
   const accessToken = await generateJWT({ _id: user._id });
   return accessToken;
 };
