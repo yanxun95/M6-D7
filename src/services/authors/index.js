@@ -71,9 +71,9 @@ authorRouter.get(
   passport.authenticate("google"),
   async (req, res, next) => {
     try {
-      console.log(req.user); // we are going to receive the tokens here thanks to the passportNext function and the serializeUser function
+      console.log("USER:", req.user); // we are going to receive the tokens here thanks to the passportNext function and the serializeUser function
 
-      res.cookie("accessToken", req.user.tokens.accessToken, {
+      res.cookie("accessToken", req.user.tokens, {
         httpOnly: true,
         secure: (process.env.NODE_ENV = "production" ? true : false),
         sameSite: "none",
