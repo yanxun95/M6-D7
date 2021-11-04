@@ -5,6 +5,7 @@ import { basicAuthMiddleware } from "../auth/basic.js";
 import { JWTAuthenticate } from "../auth/tools.js";
 import { JWTAuthMiddleware } from "../auth/token.js";
 import createHttpError from "http-errors";
+import passport from "passport";
 
 const authorRouter = express.Router();
 
@@ -59,4 +60,29 @@ authorRouter.get("/me", JWTAuthMiddleware, async (req, res, next) => {
     next(error);
   }
 });
+
+authorRouter.get(
+  "/googleLogin",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+); // This endpoint receives Google login requests from our FE and redirects them to Google
+
+authorRouter.get(
+  "/googleRedirect",
+  passport.authenticate("google"),
+  async (req, res, next) => {
+    try {
+      console.log(req.user); // we are going to receive the tokens here thanks to the passportNext function and the serializeUser function
+
+      res.cookie("accessToken", req.user.tokens.accessToken, {
+        httpOnly: true,
+        secure: (process.env.NODE_ENV = "production" ? true : false),
+        sameSite: "none",
+      });
+      res.redirect(`http://localhost:3000`);
+    } catch (error) {
+      next(error);
+    }
+  }
+); // This endpoint receives the response from Google
+
 export default authorRouter;

@@ -6,9 +6,11 @@ const { Schema, model } = mongoose;
 const authorSchema = new Schema(
   {
     name: { type: String, required: true },
+    surname: { type: String, required: true },
     email: { type: String, required: true },
-    password: { type: String, required: true },
+    password: { type: String },
     role: { type: String, default: "Author", enum: ["Author", "Admin"] },
+    googleId: { type: String },
   },
   {
     timestamps: true, // adds createdAt and updatedAt automatically

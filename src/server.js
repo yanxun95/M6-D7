@@ -9,15 +9,20 @@ import {
   badRequestHandler,
   genericErrorHandler,
 } from "./errorHandlers.js";
-
+import passport from "passport";
+import cookieParser from "cookie-parser";
+import GoogleStrategy from "./services/auth/oauth.js";
 const server = express();
 
 const port = process.env.PORT || 3001;
 
 // ************************* MIDDLEWARES ********************************
+passport.use("google", GoogleStrategy);
 
-server.use(cors());
+server.use(cors({ origin: "http://localhost:3000", credentials: true }));
 server.use(express.json());
+server.use(cookieParser());
+server.use(passport.initialize());
 
 // ************************* ROUTES ************************************
 
